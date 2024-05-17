@@ -65,7 +65,7 @@ const createPoseLandmarker = async () => {
   poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
       //modelAssetPath: 'Models\\pose_landmarker_heavy.task',
-      modelAssetPath: '..\\Models\\pose_landmarker_full.task',
+      modelAssetPath: 'src\\pose_landmarker_full.task',
       //modelAssetPath: 'Models\\pose_landmarker_lite.task',
       delegate: "GPU"
     },
