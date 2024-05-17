@@ -10,7 +10,7 @@ module.exports = {
           new NodePolyfillPlugin()
       ],
     output: {
-        path: path.resolve(__dirname, 'src/dist'),
+        path: path.resolve(__dirname, 'src'),
         filename: 'bundle.js'
     },
     module: {
