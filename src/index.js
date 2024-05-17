@@ -60,7 +60,7 @@ let modelLoaded = false;
 // get everything needed to run.
 const createPoseLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
-    "..\\node_modules\\@mediapipe\\tasks-vision\\wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
   );
   poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
