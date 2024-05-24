@@ -166,7 +166,7 @@ let pose_angles_list = [
 ];
 
 let poseTiming = {
-  1: 5,
+  1: 6,
   2: 1,
   3: 1,
   4: 0,
@@ -267,6 +267,7 @@ function getExercise(exercisePath) {
       }
 
       customizeAngles();
+      enableCam();
     })
     .catch((error) => {
       console.log(error);
@@ -274,15 +275,35 @@ function getExercise(exercisePath) {
 }
 
 function customizeAngles() {
-  let startingChar = "L";
   if (flag === "R" || flag === "RTL") {
     customizedAngles.push(
       ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
     );
+    console.log("customizedAngles : " , customizedAngles );
+    if (dynamicAngles[0][0] == "L") {
+    for (let DA = 0; DA < dynamicAngles.length; DA++) {
+      for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
+          let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
+          let mainAnglesK = Main_Angles[rightAngle];
+          pose_angles_list[poseNum][mainAnglesK[3]] =
+            pose_angles_list[poseNum][mainAnglesK[3] - 1];
+        } 
+      }
+    }
   } else if (flag === "L") {
     customizedAngles.push(
       ...dynamicAngles.map((angle) => angle.replace(/^R/, "L"))
     );
+    if (dynamicAngles[0][0] == "R") {
+    for (let DA = 0; DA < dynamicAngles.length; DA++) {
+      for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
+          let lefttAngle = dynamicAngles[DA].replace(/^R/, "L");
+          let mainAnglesK = Main_Angles[lefttAngle];
+          pose_angles_list[poseNum][mainAnglesK[3]] =
+          pose_angles_list[poseNum][mainAnglesK[3] + 1];
+        } 
+      }
+    }
   } else if (flag === "RWL") {
     for (let DA = 0; DA < dynamicAngles.length; DA++) {
       for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
@@ -308,7 +329,7 @@ function customizeAngles() {
   }
 
   customizedAngles.push(...fixedAngles);
-} 
+}
 
 async function predictWebcam() {
   if (webcamRunning === true && !poseLandmarker) {
@@ -438,7 +459,7 @@ function onResultsPose(results) {
   document.body.classList.add("loaded");
 
   
-  L_Marks = results.landmarks;
+  L_Marks = results.landmarks[0];
   
   [RT_Angles, Correct_Angles] = toBeCompared();
   console.log("Correct Angles ", Correct_Angles);
@@ -582,8 +603,7 @@ function displayBreakTime() {
 }
 
 
-if (params["dataPath"])
-{
+if (params["dataPath"]) {
   getExercise(params["dataPath"]);
 }
-enableCam();
+else { enableCam(); }

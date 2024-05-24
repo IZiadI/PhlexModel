@@ -1,6 +1,6 @@
 package-lock.json
 package.json
 node_modules
-src\firebaseFunctions.js
-src\mediaPipeFunctions.js
-src\index copy.js
+src/mediaPipeFunctions.js
+src/index copy.js
+src/firebaseFunctions.js
