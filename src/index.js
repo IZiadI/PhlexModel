@@ -84,15 +84,20 @@ const out = document.getElementById(
 const canvasCtx = out.getContext("2d");
 const drawingUtils = new DrawingUtils(canvasCtx);
 
+function adjustVideoSize() {
+  if (window.innerWidth > window.innerHeight) {
+      // Landscape
+      video.style.width = '100vw';
+      video.style.height = 'auto';
+  } else {
+      // Portrait
+      video.style.width = 'auto';
+      video.style.height = '100vh';
+  }
+}
 
-window.addEventListener('resize', () => {
-  video.style.width = window.innerWidth + 'px';
-  video.style.height = window.innerHeight + 'px';
-  
-  out.style.width = window.innerWidth + 'px';
-  out.style.height = window.innerHeight + 'px';
-
-});
+window.addEventListener('resize', adjustVideoSize);
+window.addEventListener('orientationchange', adjustVideoSize);
 
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
@@ -121,7 +126,7 @@ function enableCam(event) {
   // getUsermedia parameters.
   const constraints = {
     video: {
-      facingMode: 'environment',
+      facingMode: 'user',
       width: { ideal: 1920 },
       height: { ideal: 1080 }
     }
@@ -129,8 +134,7 @@ function enableCam(event) {
 
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    video.style.width =  '1920px';
-    video.style.height = '1080px';
+    adjustVideoSize();
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
