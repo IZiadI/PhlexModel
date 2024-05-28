@@ -56,6 +56,12 @@ var videoHeight;
 var videoWidth;
 let lastVideoTime = -1;
 let modelLoaded = false;
+const videoE = document.getElementById("webcam");
+const outPutCanvas = document.getElementById("output_canvas");
+videoE.style.width = screen.availWidth;
+videoE.style.height = screen.availHeight;
+outPutCanvas.style.width = screen.availWidth;
+outPutCanvas.style.height = screen.availHeight;
 
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to

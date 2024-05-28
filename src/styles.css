@@ -76,9 +76,6 @@ h2 {
   border-radius: 0.25rem;
   display: inline-block;
 }
-video, canvas {
-  max-width: 100%;
-}
 
 @keyframes loader{
   0% {transform: rotate(0deg);}
