@@ -395,10 +395,6 @@ async function predictWebcam() {
     modelLoaded = true;
     $(".loader-wrapper").fadeOut("slow");
   }
-  out.style.height = videoHeight;
-  video.style.height = videoHeight;
-  out.style.width = videoWidth;
-  video.style.width = videoWidth;
   // Now let's start detecting the stream.
   if (runningMode === "IMAGE") {
     runningMode = "VIDEO";
