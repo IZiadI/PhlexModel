@@ -97,6 +97,7 @@ function adjustVideoSize() {
       out.style.height = '100vh';
       out.style.width = '100vw';
   }
+  console.log("Resolution: " + window.screen.availWidth + "," + window.screen.availHeight)
 }
 
 window.addEventListener('resize', adjustVideoSize);
@@ -134,8 +135,8 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
+      width: { ideal: window.screen.availHeight },
+      height: { ideal: window.screen.availWidth }
     }
   };
 
