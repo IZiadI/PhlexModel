@@ -87,15 +87,15 @@ function adjustVideoSize() {
   if (window.innerWidth > window.innerHeight) {
       // Landscape
       video.style.width = '100vw';
-      video.style.height = '100vh';
+      video.style.height = 'auto';
       out.style.width = '100vw';
-      out.style.height = '100vh';
+      out.style.height = 'auto';
   } else {
     // Portrait
     video.style.height = '100vh';
-      video.style.width = '100vw';
+      video.style.width = 'auto';
       out.style.height = '100vh';
-      out.style.width = '100vw';
+      out.style.width = 'auto';
   }
   console.log("Resolution: " + window.screen.availWidth + "," + window.screen.availHeight)
 }
@@ -135,8 +135,8 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: window.screen.availHeight },
-      height: { ideal: window.screen.availWidth }
+      width: { ideal: window.innerWidth > window.innerHeight? window.screen.availWidth:window.screen.availHeight },
+      height: { ideal: window.innerWidth <= window.innerHeight? window.screen.availWidth:window.screen.availHeight }
     }
   };
 
