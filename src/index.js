@@ -89,10 +89,14 @@ function adjustVideoSize() {
       // Landscape
       video.style.width = '100vw';
       video.style.height = 'auto';
+      out.style.width = '100vw';
+      out.style.height = 'auto';
   } else {
       // Portrait
       video.style.width = 'auto';
       video.style.height = '100vh';
+      out.style.width = 'auto';
+      out.style.height = '100vh';
   }
 }
 
