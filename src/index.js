@@ -82,6 +82,8 @@ const out = document.getElementById(
   "output_canvas"
 );
 
+var canvasCtx = out.getContext("2d");
+var drawingUtils = new DrawingUtils(canvasCtx);
 
 function adjustVideoSize() {
   if (window.innerWidth > window.innerHeight) {
@@ -97,15 +99,14 @@ function adjustVideoSize() {
       out.style.height = '100vh';
       out.style.width = 'auto';
   }
+  canvasCtx = out.getContext("2d");
+  drawingUtils = new DrawingUtils(canvasCtx);
   console.log("Resolution: " + window.screen.availWidth + "," + window.screen.availHeight)
 }
 
 window.addEventListener('resize', adjustVideoSize);
 window.addEventListener('orientationchange', adjustVideoSize);
 
-adjustVideoSize();
-const canvasCtx = out.getContext("2d");
-const drawingUtils = new DrawingUtils(canvasCtx);
 
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
@@ -135,8 +136,8 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: window.innerWidth > window.innerHeight? window.screen.availWidth:window.screen.availHeight },
-      height: { ideal: window.innerWidth <= window.innerHeight? window.screen.availWidth:window.screen.availHeight }
+      width: { ideal: 1080 },
+      height: { ideal: 1920 }
     }
   };
 
@@ -161,6 +162,7 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const firestore = getFirestore(app);
 
+$(".loader-wrapper").fadeOut("slow");
 
 
 window.downloadFile = (path) => {
