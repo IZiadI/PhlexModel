@@ -52,8 +52,6 @@ console.log(params);
 let poseLandmarker;
 let runningMode = "IMAGE";
 let webcamRunning = false;
-var videoHeight;
-var videoWidth;
 let lastVideoTime = -1;
 let modelLoaded = false;
 
@@ -89,15 +87,15 @@ function adjustVideoSize() {
   if (window.innerWidth > window.innerHeight) {
       // Landscape
       video.style.width = '100vw';
-      video.style.height = 'auto';
+      video.style.height = '100vh';
       out.style.width = '100vw';
-      out.style.height = 'auto';
+      out.style.height = '100vh';
   } else {
     // Portrait
     video.style.height = '100vh';
-      video.style.width = 'auto';
+      video.style.width = '100vw';
       out.style.height = '100vh';
-      out.style.width = 'auto';
+      out.style.width = '100vw';
   }
   canvasCtx = out.getContext("2d");
   drawingUtils = new DrawingUtils(canvasCtx);
@@ -136,14 +134,45 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: 1080 },
-      height: { ideal: 1920 },
-      advanced: [{ zoom: 1.0 }] 
+      width: { ideal: window.innerWidth },
+      height: { ideal: window.innerHeight },
+      advanced: [{ zoom: 0.1 }] 
     }
   };
 
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    const videoTrack = stream.getVideoTracks()[0];
+    var capabilities;
+    try {
+      capabilities = videoTrack.getCapabilities();
+    }
+    catch
+    {
+      capabilities = false;
+    }
+    if (capabilities.zoom) {
+      // Get the settings of the video track
+      const settings = videoTrack.getSettings();
+
+      // Log the current zoom level and the supported range
+      console.log(`Current zoom: ${settings.zoom}`);
+      console.log(`Zoom range: ${capabilities.zoom.min} - ${capabilities.zoom.max}`);
+
+      // Set the desired zoom level (must be within the supported range)
+      const desiredZoom = capabilities.zoom.min;
+
+      // Apply the new zoom level
+      videoTrack.applyConstraints({ advanced: [{ zoom: desiredZoom }] })
+        .then(() => {
+          console.log(`Zoom successfully set to: ${desiredZoom}`);
+        })
+        .catch((error) => {
+          console.error('Error applying zoom:', error);
+        });
+    } else {
+      console.log('Zoom is not supported by this camera.');
+    }
     adjustVideoSize();
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
@@ -523,8 +552,8 @@ function onResultsPose(results) {
   L_Marks = results.landmarks[0];
   
   [RT_Angles, Correct_Angles] = toBeCompared();
-  console.log("Correct Angles ", Correct_Angles);
-  console.log("RT Angles ", RT_Angles);
+  //console.log("Correct Angles ", Correct_Angles);
+  //console.log("RT Angles ", RT_Angles);
   
   let Match = comparePoses(RT_Angles, Correct_Angles);
   
