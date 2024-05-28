@@ -56,12 +56,6 @@ var videoHeight;
 var videoWidth;
 let lastVideoTime = -1;
 let modelLoaded = false;
-const videoE = document.getElementById("webcam");
-const outPutCanvas = document.getElementById("output_canvas");
-videoE.style.width = screen.availHeight;
-videoE.style.height = screen.availWidth;
-outPutCanvas.style.width = screen.availHeight;
-outPutCanvas.style.height = screen.availWidth;
 
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
@@ -90,6 +84,16 @@ const out = document.getElementById(
 const canvasCtx = out.getContext("2d");
 const drawingUtils = new DrawingUtils(canvasCtx);
 
+
+window.addEventListener('resize', () => {
+  video.style.width = window.innerWidth + 'px';
+  video.style.height = window.innerHeight + 'px';
+  
+  out.style.width = window.innerWidth + 'px';
+  out.style.height = window.innerHeight + 'px';
+
+});
+
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
 
@@ -117,21 +121,16 @@ function enableCam(event) {
   // getUsermedia parameters.
   const constraints = {
     video: {
-      width: { ideal: window.screen.availHeight },  // ideal width in pixels
-      height: { ideal: window.screen.availWidth },  // ideal height in pixels
+      facingMode: 'environment',
+      width: { ideal: 1920 },
+      height: { ideal: 1080 }
     }
   };
 
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    const videoTrack = stream.getVideoTracks()[0];
-        
-    // Get the settings of the video track
-    const settings = videoTrack.getSettings();
-
-    videoHeight = settings.height + "px";
-    videoWidth = settings.width + "px";
-    console.log(`Resolution: ${settings.width}x${settings.height}`);
+    video.style.width =  '1920px';
+    video.style.height = '1080px';
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
