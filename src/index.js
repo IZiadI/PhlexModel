@@ -137,7 +137,8 @@ function enableCam(event) {
     video: {
       facingMode: 'user',
       width: { ideal: 1080 },
-      height: { ideal: 1920 }
+      height: { ideal: 1920 },
+      advanced: [{ zoom: 1.0 }] 
     }
   };
 
