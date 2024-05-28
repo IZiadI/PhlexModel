@@ -81,8 +81,7 @@ const video = document.getElementById("webcam");
 const out = document.getElementById(
   "output_canvas"
 );
-const canvasCtx = out.getContext("2d");
-const drawingUtils = new DrawingUtils(canvasCtx);
+
 
 function adjustVideoSize() {
   if (window.innerWidth > window.innerHeight) {
@@ -102,6 +101,10 @@ function adjustVideoSize() {
 
 window.addEventListener('resize', adjustVideoSize);
 window.addEventListener('orientationchange', adjustVideoSize);
+
+adjustVideoSize();
+const canvasCtx = out.getContext("2d");
+const drawingUtils = new DrawingUtils(canvasCtx);
 
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
