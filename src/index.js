@@ -1,6 +1,7 @@
 import "./styles.css";
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { Buffer } from "buffer";
 import { gunzipSync } from "browserify-zlib";
 import {
@@ -9,6 +10,7 @@ import {
   DrawingUtils
 } from "@mediapipe/tasks-vision";
 import $ from "jquery";
+
 
 
 function parseQueryString(queryString) {
@@ -50,8 +52,8 @@ console.log(params);
 let poseLandmarker;
 let runningMode = "IMAGE";
 let webcamRunning = false;
-const videoHeight = "360px";
-const videoWidth = "480px";
+var videoHeight;
+var videoWidth;
 let lastVideoTime = -1;
 let modelLoaded = false;
 
@@ -108,11 +110,22 @@ function enableCam(event) {
 
   // getUsermedia parameters.
   const constraints = {
-    video: true
+    video: {
+      width: { ideal: window.screen.availWidth },  // ideal width in pixels
+      height: { ideal: window.screen.availHeight },  // ideal height in pixels
+    }
   };
 
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    const videoTrack = stream.getVideoTracks()[0];
+        
+    // Get the settings of the video track
+    const settings = videoTrack.getSettings();
+
+    videoHeight = settings.height + "px";
+    videoWidth = settings.width + "px";
+    console.log(`Resolution: ${settings.width}x${settings.height}`);
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
@@ -129,6 +142,9 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+const firestore = getFirestore(app);
+
+
 
 window.downloadFile = (path) => {
   return new Promise((resolve, reject) => {
@@ -156,24 +172,18 @@ let poseInfoElement = document.getElementById("pose-info");
 let timeSpentInfoElement = document.getElementById("timeSpent");
 
 //* Exercise info to be collected
-// let target_angles_list = [];
-// let pose_angles_list = [];
-let target_angles_list = ['L_Neck', 'R_Neck'];
-let pose_angles_list = [
-  [75, 75, 170, 170, 170, 170, 170, 170, 180, 180, 170, 170, 90, 90],
-  [60, 90, 90, 90, 90, 90, 170, 170, 180, 180, 170, 170, 90, 90],
-  [90, 60, 170, 170, 170, 170, 170, 170, 180, 180, 170, 170, 90, 90]
-];
-
+let target_angles_list = [];
+let pose_angles_list = [];
 let poseTiming = {
-  1: 6,
-  2: 1,
+  1: 3,
+  2: 5,
   3: 1,
   4: 0,
-  5: 0,
+  5: 1,
+  6: 1,
 };
 let counterMax = 2;
-let flag = "RTL"; 
+let flag = "RWL"; 
 
 //^ info modification & customization
 let fixedAngles = [];
@@ -183,8 +193,8 @@ let customizedAngles = [];
 
 
 const Main_Angles = {
-  L_Neck: [0, 11, 12, 0],
-  R_Neck: [0, 12, 11, 1],
+  L_Neck: [0, 12, 11, 0],
+  R_Neck: [0, 11, 12, 1],
   L_Shoulder: [13, 11, 23, 2],
   R_Shoulder: [14, 12, 24, 3],
   L_Elbow: [11, 13, 15, 4],
@@ -205,7 +215,6 @@ let RT_Angles = [];
 let Correct_Angles = [];
 let tolerance_deg = 15;
 let Num_Of_Pose_Completed = 0;
-let Counter = 0;
 
 let countdown = Number.MAX_SAFE_INTEGER;
 let countdownMSG = "";
@@ -220,8 +229,11 @@ let color = "#E37383";
 let Msg = "";
 
 //* info to be stored
-let poseTimeSpent = {};
-
+let poseTimeSpent = {}; // Total time user spent at each pose for that day
+let poseAcc = {}; // (Time user spent at each pose / Time should be spent at each pose ) * 100
+let Counter = 0;  // How many counts he did out of total counts (i.e counterMax)
+let CountsPercent = 0; // The exercise progress (i.e (Counter / counterMax) * 100)
+let global
 
 //^ Functions
 
@@ -272,28 +284,47 @@ function getExercise(exercisePath) {
     .catch((error) => {
       console.log(error);
     });
-}
-
-function customizeAngles() {
-  if (flag === "R" || flag === "RTL") {
-    customizedAngles.push(
-      ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
-    );
-    console.log("customizedAngles : " , customizedAngles );
-    if (dynamicAngles[0][0] == "L") {
-    for (let DA = 0; DA < dynamicAngles.length; DA++) {
-      for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
-          let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
-          let mainAnglesK = Main_Angles[rightAngle];
-          pose_angles_list[poseNum][mainAnglesK[3]] =
+  }
+  
+  function customizeAngles() {
+    
+    if (flag === "R" || flag === "RTL") {
+      
+      if (dynamicAngles.length === 0) {
+        for(let i = 0; i < fixedAngles.length ; i+=2){
+          customizedAngles.push(fixedAngles[i].replace(/^L/, "R"))
+        }
+      }
+      else{
+      customizedAngles.push(...fixedAngles);
+      customizedAngles.push(
+        ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
+      );
+      
+      if (dynamicAngles[0][0] == "L") {
+        for (let DA = 0; DA < dynamicAngles.length; DA++) {
+          for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
+            let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
+            let mainAnglesK = Main_Angles[rightAngle];
+            pose_angles_list[poseNum][mainAnglesK[3]] =
             pose_angles_list[poseNum][mainAnglesK[3] - 1];
-        } 
+          } 
+        }
       }
     }
-  } else if (flag === "L") {
+  } 
+  else if (flag === "L") {
+    if (dynamicAngles.length === 0) {
+      for(let i = 0; i < fixedAngles.length ; i+=2){
+        customizedAngles.push(fixedAngles[i].replace(/^R/, "L"))
+      }
+    }
+    else{
+    customizedAngles.push(...fixedAngles);
     customizedAngles.push(
       ...dynamicAngles.map((angle) => angle.replace(/^R/, "L"))
     );
+
     if (dynamicAngles[0][0] == "R") {
     for (let DA = 0; DA < dynamicAngles.length; DA++) {
       for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
@@ -303,8 +334,14 @@ function customizeAngles() {
           pose_angles_list[poseNum][mainAnglesK[3] + 1];
         } 
       }
+    }}
+  } 
+  else if (flag === "RWL") {
+    if (dynamicAngles.length === 0) {
+      customizedAngles.push(...fixedAngles);
     }
-  } else if (flag === "RWL") {
+    else{
+
     for (let DA = 0; DA < dynamicAngles.length; DA++) {
       for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
         if (dynamicAngles[DA][0] == "L") {
@@ -327,8 +364,9 @@ function customizeAngles() {
       );
     });
   }
+}
+console.log("customizedAngles : " , customizedAngles );
 
-  customizedAngles.push(...fixedAngles);
 }
 
 async function predictWebcam() {
@@ -409,9 +447,16 @@ function toBeCompared() {
     // Val will hold the angle definition (i.e., Key-Value pair in Main_Angles dictionary)
     let Val = Main_Angles[angle_name];
     // Calculate the angle and add it to RT_Angles
+    let midP = [L_Marks[Val[1]].x, L_Marks[Val[1]].y];
+    if (angle_name[2] == "N") {
+      let neckX = (L_Marks[Val[1]].x + L_Marks[Val[2]].x) / 2 ;
+      let neckY = (L_Marks[Val[1]].y + L_Marks[Val[2]].y) / 2 ;
+      midP = [neckX, neckY] ;
+    }    
+
     let rt_angle = calculateAngle(
       [L_Marks[Val[0]].x, L_Marks[Val[0]].y],
-      [L_Marks[Val[1]].x, L_Marks[Val[1]].y],
+      midP ,
       [L_Marks[Val[2]].x, L_Marks[Val[2]].y]
     );
     RT.push(rt_angle);
@@ -430,7 +475,7 @@ function comparePoses(RT_Angles, Correct_Angles) {
     let rt_angle = RT_Angles[i];
     let correct_angle = Correct_Angles[i];
     if (customizedAngles[i][2] == "N") {
-      if (Math.abs(rt_angle - correct_angle) <= 30) {
+      if (Math.abs(rt_angle - correct_angle) <= 2) {
         Angle_Match += 1;
       }
     } else {
@@ -559,6 +604,7 @@ function callTimer() {
         let currentTime = new Date();
         let poseDuration = (currentTime - startTime) / 1000; 
         poseTimeSpent[Num_Of_Pose_Completed + 1] += poseDuration; 
+        if (poseTimeSpent [Num_Of_Pose_Completed + 1] > poseTiming[Num_Of_Pose_Completed + 1]){poseTimeSpent [Num_Of_Pose_Completed + 1] =  poseTiming[Num_Of_Pose_Completed + 1]} ;
         inPose = false;
       }
       firstTimePose = true;
