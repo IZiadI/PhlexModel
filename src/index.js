@@ -54,6 +54,7 @@ let runningMode = "IMAGE";
 let webcamRunning = false;
 let lastVideoTime = -1;
 let modelLoaded = false;
+var zoomIGuessLol = 4;
 
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
@@ -83,27 +84,21 @@ const out = document.getElementById(
 var canvasCtx = out.getContext("2d");
 var drawingUtils = new DrawingUtils(canvasCtx);
 
-function adjustVideoSize() {
-  if (window.innerWidth > window.innerHeight) {
-      // Landscape
-      video.style.width = '100vw';
-      video.style.height = '100vh';
-      out.style.width = '100vw';
-      out.style.height = '100vh';
-  } else {
-    // Portrait
-    video.style.height = '100vh';
-      video.style.width = '100vw';
-      out.style.height = '100vh';
-      out.style.width = '100vw';
-  }
-  canvasCtx = out.getContext("2d");
-  drawingUtils = new DrawingUtils(canvasCtx);
-  console.log("Resolution: " + window.screen.availWidth + "," + window.screen.availHeight)
+function adjustVideoSize(width, height) {
+
+  video.style.width = width + "px";
+  video.style.height = height + "px";
+  out.style.width = width + "px";
+  out.style.height = height + "px";
+  canvasCtx.canvas.width = width / zoomIGuessLol;
+  canvasCtx.canvas.height = height / zoomIGuessLol;
+  // canvasCtx = out.getContext("2d");
+  // drawingUtils = new DrawingUtils(canvasCtx);
+  console.log("Resolution: " + width + "," + height)
 }
 
-window.addEventListener('resize', adjustVideoSize);
-window.addEventListener('orientationchange', adjustVideoSize);
+// window.addEventListener('resize', adjustVideoSize);
+// window.addEventListener('orientationchange', adjustVideoSize);
 
 
 // Check if webcam access is supported.
@@ -130,50 +125,22 @@ function enableCam(event) {
     webcamRunning = true;
   }
 
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+
   // getUsermedia parameters.
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: window.innerWidth },
-      height: { ideal: window.innerHeight },
+      width: { ideal: w*zoomIGuessLol},
+      height: { ideal: h*zoomIGuessLol },
       advanced: [{ zoom: 0.1 }] 
     }
   };
-
+  adjustVideoSize(w,h);
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    const videoTrack = stream.getVideoTracks()[0];
-    var capabilities;
-    try {
-      capabilities = videoTrack.getCapabilities();
-    }
-    catch
-    {
-      capabilities = false;
-    }
-    if (capabilities.zoom) {
-      // Get the settings of the video track
-      const settings = videoTrack.getSettings();
-
-      // Log the current zoom level and the supported range
-      console.log(`Current zoom: ${settings.zoom}`);
-      console.log(`Zoom range: ${capabilities.zoom.min} - ${capabilities.zoom.max}`);
-
-      // Set the desired zoom level (must be within the supported range)
-      const desiredZoom = capabilities.zoom.min;
-
-      // Apply the new zoom level
-      videoTrack.applyConstraints({ advanced: [{ zoom: desiredZoom }] })
-        .then(() => {
-          console.log(`Zoom successfully set to: ${desiredZoom}`);
-        })
-        .catch((error) => {
-          console.error('Error applying zoom:', error);
-        });
-    } else {
-      console.log('Zoom is not supported by this camera.');
-    }
-    adjustVideoSize();
+    
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
