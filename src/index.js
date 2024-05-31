@@ -86,12 +86,11 @@ var drawingUtils = new DrawingUtils(canvasCtx);
 
 function adjustVideoSize(width, height) {
 
-  video.style.width = width + "px";
-  video.style.height = height + "px";
+  canvasCtx.canvas.width = width;
+  canvasCtx.canvas.height = height * 1.2;
   out.style.width = width + "px";
   out.style.height = height + "px";
-  // canvasCtx.canvas.width = width / zoomIGuessLol;
-  // canvasCtx.canvas.height = height / zoomIGuessLol;
+
   // canvasCtx = out.getContext("2d");
   // drawingUtils = new DrawingUtils(canvasCtx);
   console.log("Resolution: " + width + "," + height)
@@ -141,24 +140,6 @@ function enableCam(event) {
   adjustVideoSize(w,h);
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    const videoTrack = stream.getVideoTracks()[0];
-    
-    // Get the video settings
-    const settings = videoTrack.getSettings();
-    
-    // Get the width and height of the video
-    const videoWidth = settings.width;
-    const videoHeight = settings.height;
-    
-
-    // Get the window's inner width
-    const windowWidth = window.innerWidth;
-    
-    // Log the dimensions
-    console.log(`Video width: ${videoWidth}px, Video height: ${videoHeight}px`);
-    console.log(`Window width: ${windowWidth}px`);
-    console.log(`Ratio: ${videoWidth/videoHeight}px`);
-    
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
@@ -404,6 +385,7 @@ console.log("customizedAngles : " , customizedAngles );
 }
 
 async function predictWebcam() {
+  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
   if (webcamRunning === true && !poseLandmarker) {
     window.requestAnimationFrame(predictWebcam);
     return;
@@ -608,7 +590,7 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   canvasCtx.save();
-  canvasCtx.clearRect(0, 0, out.width, out.height);
+  //canvasCtx.clearRect(0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
