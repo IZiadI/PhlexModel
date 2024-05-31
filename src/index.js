@@ -87,7 +87,7 @@ var drawingUtils = new DrawingUtils(canvasCtx);
 function adjustVideoSize(width, height) {
 
   canvasCtx.canvas.width = width;
-  canvasCtx.canvas.height = height * 1.2;
+  canvasCtx.canvas.height = height;
   out.style.width = width + "px";
   out.style.height = height + "px";
 
@@ -133,8 +133,7 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: w*zoomIGuessLol},
-      height: { ideal: h*zoomIGuessLol },
+      aspectRatio: {exact: w/h},
     }
   };
   adjustVideoSize(w,h);
@@ -385,7 +384,6 @@ console.log("customizedAngles : " , customizedAngles );
 }
 
 async function predictWebcam() {
-  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
   if (webcamRunning === true && !poseLandmarker) {
     window.requestAnimationFrame(predictWebcam);
     return;
@@ -589,8 +587,11 @@ function onResultsPose(results) {
 
 
 function drawAll(result) {
+  
   canvasCtx.save();
-  //canvasCtx.clearRect(0, 0, out.width, out.height);
+  canvasCtx.clearRect(0, 0, out.width, out.height);
+
+  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
