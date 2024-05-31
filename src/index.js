@@ -1,6 +1,7 @@
 import "./styles.css";
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { Buffer } from "buffer";
 import { gunzipSync } from "browserify-zlib";
 import {
@@ -9,6 +10,7 @@ import {
   DrawingUtils
 } from "@mediapipe/tasks-vision";
 import $ from "jquery";
+
 
 
 function parseQueryString(queryString) {
@@ -48,19 +50,11 @@ var params = parseQueryString(queryString);
 console.log(params);
 
 let poseLandmarker;
-let runningMode = "VIDEO";
+let runningMode = "IMAGE";
 let webcamRunning = false;
-const videoHeight = "360px";
-const videoWidth = "480px";
 let lastVideoTime = -1;
 let modelLoaded = false;
-
-
-window.mobileCheck = function() {
-  let check = false;
-  (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
-  return check;
-};
+var zoomIGuessLol = 4;
 
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
@@ -83,20 +77,29 @@ const createPoseLandmarker = async () => {
 createPoseLandmarker();
 
 const video = document.getElementById("webcam");
-const out = document.getElementById("output_canvas");
+const out = document.getElementById(
+  "output_canvas"
+);
 
-video.style.width = `${window.innerWidth}px`;
-video.style.height = `${window.innerHeight}px`;
+var canvasCtx = out.getContext("2d");
+var drawingUtils = new DrawingUtils(canvasCtx);
 
-const canvasCtx = out.getContext("2d");
-if (window.mobileCheck()) {
-  canvasCtx.canvas.height = screen.width;
-  canvasCtx.canvas.width = screen.height;
-} else { 
-  canvasCtx.canvas.width = window.innerWidth;
-  canvasCtx.canvas.height = window.innerHeight;
+function adjustVideoSize(width, height) {
+
+  video.style.width = width + "px";
+  video.style.height = height + "px";
+  out.style.width = width + "px";
+  out.style.height = height + "px";
+  // canvasCtx.canvas.width = width / zoomIGuessLol;
+  // canvasCtx.canvas.height = height / zoomIGuessLol;
+  // canvasCtx = out.getContext("2d");
+  // drawingUtils = new DrawingUtils(canvasCtx);
+  console.log("Resolution: " + width + "," + height)
 }
-const drawingUtils = new DrawingUtils(canvasCtx);
+
+// window.addEventListener('resize', adjustVideoSize);
+// window.addEventListener('orientationchange', adjustVideoSize);
+
 
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
@@ -122,13 +125,40 @@ function enableCam(event) {
     webcamRunning = true;
   }
 
+  const w = document.documentElement.clientWidth;
+  const h = document.documentElement.clientHeight;
+
+  console.log()
+
   // getUsermedia parameters.
   const constraints = {
-    video: true
+    video: {
+      facingMode: 'user',
+      width: { ideal: w*zoomIGuessLol},
+      height: { ideal: h*zoomIGuessLol },
+    }
   };
-
+  adjustVideoSize(w,h);
   // Activate the webcam stream.
-  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {    
+  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    const videoTrack = stream.getVideoTracks()[0];
+    
+    // Get the video settings
+    const settings = videoTrack.getSettings();
+    
+    // Get the width and height of the video
+    const videoWidth = settings.width;
+    const videoHeight = settings.height;
+    
+
+    // Get the window's inner width
+    const windowWidth = window.innerWidth;
+    
+    // Log the dimensions
+    console.log(`Video width: ${videoWidth}px, Video height: ${videoHeight}px`);
+    console.log(`Window width: ${windowWidth}px`);
+    console.log(`Ratio: ${videoWidth/videoHeight}px`);
+    
     video.srcObject = stream;
     video.addEventListener("loadeddata", predictWebcam);
   });
@@ -145,6 +175,10 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
+const firestore = getFirestore(app);
+
+$(".loader-wrapper").fadeOut("slow");
+
 
 window.downloadFile = (path) => {
   return new Promise((resolve, reject) => {
@@ -172,24 +206,18 @@ let poseInfoElement = document.getElementById("pose-info");
 let timeSpentInfoElement = document.getElementById("timeSpent");
 
 //* Exercise info to be collected
-// let target_angles_list = [];
-// let pose_angles_list = [];
-let target_angles_list = ['L_Neck', 'R_Neck'];
-let pose_angles_list = [
-  [75, 75, 170, 170, 170, 170, 170, 170, 180, 180, 170, 170, 90, 90],
-  [60, 90, 90, 90, 90, 90, 170, 170, 180, 180, 170, 170, 90, 90],
-  [90, 60, 170, 170, 170, 170, 170, 170, 180, 180, 170, 170, 90, 90]
-];
-
+let target_angles_list = [];
+let pose_angles_list = [];
 let poseTiming = {
-  1: 6,
-  2: 1,
+  1: 3,
+  2: 5,
   3: 1,
   4: 0,
-  5: 0,
+  5: 1,
+  6: 1,
 };
 let counterMax = 2;
-let flag = "RTL"; 
+let flag = "RWL"; 
 
 //^ info modification & customization
 let fixedAngles = [];
@@ -199,8 +227,8 @@ let customizedAngles = [];
 
 
 const Main_Angles = {
-  L_Neck: [0, 11, 12, 0],
-  R_Neck: [0, 12, 11, 1],
+  L_Neck: [0, 12, 11, 0],
+  R_Neck: [0, 11, 12, 1],
   L_Shoulder: [13, 11, 23, 2],
   R_Shoulder: [14, 12, 24, 3],
   L_Elbow: [11, 13, 15, 4],
@@ -221,7 +249,6 @@ let RT_Angles = [];
 let Correct_Angles = [];
 let tolerance_deg = 15;
 let Num_Of_Pose_Completed = 0;
-let Counter = 0;
 
 let countdown = Number.MAX_SAFE_INTEGER;
 let countdownMSG = "";
@@ -236,8 +263,11 @@ let color = "#E37383";
 let Msg = "";
 
 //* info to be stored
-let poseTimeSpent = {};
-
+let poseTimeSpent = {}; // Total time user spent at each pose for that day
+let poseAcc = {}; // (Time user spent at each pose / Time should be spent at each pose ) * 100
+let Counter = 0;  // How many counts he did out of total counts (i.e counterMax)
+let CountsPercent = 0; // The exercise progress (i.e (Counter / counterMax) * 100)
+let global
 
 //^ Functions
 
@@ -288,28 +318,47 @@ function getExercise(exercisePath) {
     .catch((error) => {
       console.log(error);
     });
-}
-
-function customizeAngles() {
-  if (flag === "R" || flag === "RTL") {
-    customizedAngles.push(
-      ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
-    );
-    console.log("customizedAngles : " , customizedAngles );
-    if (dynamicAngles[0][0] == "L") {
-    for (let DA = 0; DA < dynamicAngles.length; DA++) {
-      for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
-          let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
-          let mainAnglesK = Main_Angles[rightAngle];
-          pose_angles_list[poseNum][mainAnglesK[3]] =
+  }
+  
+  function customizeAngles() {
+    
+    if (flag === "R" || flag === "RTL") {
+      
+      if (dynamicAngles.length === 0) {
+        for(let i = 0; i < fixedAngles.length ; i+=2){
+          customizedAngles.push(fixedAngles[i].replace(/^L/, "R"))
+        }
+      }
+      else{
+      customizedAngles.push(...fixedAngles);
+      customizedAngles.push(
+        ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
+      );
+      
+      if (dynamicAngles[0][0] == "L") {
+        for (let DA = 0; DA < dynamicAngles.length; DA++) {
+          for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
+            let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
+            let mainAnglesK = Main_Angles[rightAngle];
+            pose_angles_list[poseNum][mainAnglesK[3]] =
             pose_angles_list[poseNum][mainAnglesK[3] - 1];
-        } 
+          } 
+        }
       }
     }
-  } else if (flag === "L") {
+  } 
+  else if (flag === "L") {
+    if (dynamicAngles.length === 0) {
+      for(let i = 0; i < fixedAngles.length ; i+=2){
+        customizedAngles.push(fixedAngles[i].replace(/^R/, "L"))
+      }
+    }
+    else{
+    customizedAngles.push(...fixedAngles);
     customizedAngles.push(
       ...dynamicAngles.map((angle) => angle.replace(/^R/, "L"))
     );
+
     if (dynamicAngles[0][0] == "R") {
     for (let DA = 0; DA < dynamicAngles.length; DA++) {
       for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
@@ -319,8 +368,14 @@ function customizeAngles() {
           pose_angles_list[poseNum][mainAnglesK[3] + 1];
         } 
       }
+    }}
+  } 
+  else if (flag === "RWL") {
+    if (dynamicAngles.length === 0) {
+      customizedAngles.push(...fixedAngles);
     }
-  } else if (flag === "RWL") {
+    else{
+
     for (let DA = 0; DA < dynamicAngles.length; DA++) {
       for (let poseNum = 0; poseNum < pose_angles_list.length; poseNum++) {
         if (dynamicAngles[DA][0] == "L") {
@@ -343,8 +398,9 @@ function customizeAngles() {
       );
     });
   }
+}
+console.log("customizedAngles : " , customizedAngles );
 
-  customizedAngles.push(...fixedAngles);
 }
 
 async function predictWebcam() {
@@ -357,10 +413,6 @@ async function predictWebcam() {
     modelLoaded = true;
     $(".loader-wrapper").fadeOut("slow");
   }
-  out.style.height = videoHeight;
-  video.style.height = videoHeight;
-  out.style.width = videoWidth;
-  video.style.width = videoWidth;
   // Now let's start detecting the stream.
   if (runningMode === "IMAGE") {
     runningMode = "VIDEO";
@@ -425,9 +477,16 @@ function toBeCompared() {
     // Val will hold the angle definition (i.e., Key-Value pair in Main_Angles dictionary)
     let Val = Main_Angles[angle_name];
     // Calculate the angle and add it to RT_Angles
+    let midP = [L_Marks[Val[1]].x, L_Marks[Val[1]].y];
+    if (angle_name[2] == "N") {
+      let neckX = (L_Marks[Val[1]].x + L_Marks[Val[2]].x) / 2 ;
+      let neckY = (L_Marks[Val[1]].y + L_Marks[Val[2]].y) / 2 ;
+      midP = [neckX, neckY] ;
+    }    
+
     let rt_angle = calculateAngle(
       [L_Marks[Val[0]].x, L_Marks[Val[0]].y],
-      [L_Marks[Val[1]].x, L_Marks[Val[1]].y],
+      midP ,
       [L_Marks[Val[2]].x, L_Marks[Val[2]].y]
     );
     RT.push(rt_angle);
@@ -446,7 +505,7 @@ function comparePoses(RT_Angles, Correct_Angles) {
     let rt_angle = RT_Angles[i];
     let correct_angle = Correct_Angles[i];
     if (customizedAngles[i][2] == "N") {
-      if (Math.abs(rt_angle - correct_angle) <= 30) {
+      if (Math.abs(rt_angle - correct_angle) <= 2) {
         Angle_Match += 1;
       }
     } else {
@@ -478,8 +537,8 @@ function onResultsPose(results) {
   L_Marks = results.landmarks[0];
   
   [RT_Angles, Correct_Angles] = toBeCompared();
-  console.log("Correct Angles ", Correct_Angles);
-  console.log("RT Angles ", RT_Angles);
+  //console.log("Correct Angles ", Correct_Angles);
+  //console.log("RT Angles ", RT_Angles);
   
   let Match = comparePoses(RT_Angles, Correct_Angles);
   
@@ -575,6 +634,7 @@ function callTimer() {
         let currentTime = new Date();
         let poseDuration = (currentTime - startTime) / 1000; 
         poseTimeSpent[Num_Of_Pose_Completed + 1] += poseDuration; 
+        if (poseTimeSpent [Num_Of_Pose_Completed + 1] > poseTiming[Num_Of_Pose_Completed + 1]){poseTimeSpent [Num_Of_Pose_Completed + 1] =  poseTiming[Num_Of_Pose_Completed + 1]} ;
         inPose = false;
       }
       firstTimePose = true;
