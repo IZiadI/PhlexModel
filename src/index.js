@@ -127,8 +127,6 @@ function enableCam(event) {
   const w = document.documentElement.clientWidth;
   const h = document.documentElement.clientHeight;
 
-  console.log()
-
   // getUsermedia parameters.
   const constraints = {
     video: {
@@ -157,7 +155,7 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const firestore = getFirestore(app);
 
-$(".loader-wrapper").fadeOut("slow");
+//$(".loader-wrapper").fadeOut("slow");
 
 
 window.downloadFile = (path) => {
