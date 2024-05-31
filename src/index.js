@@ -48,7 +48,7 @@ var params = parseQueryString(queryString);
 console.log(params);
 
 let poseLandmarker;
-let runningMode = "IMAGE";
+let runningMode = "VIDEO";
 let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
@@ -90,8 +90,8 @@ video.style.height = `${window.innerHeight}px`;
 
 const canvasCtx = out.getContext("2d");
 if (window.mobileCheck()) {
-  canvasCtx.canvas.height = window.innerWidth;
-  canvasCtx.canvas.width = window.innerHeight;
+  canvasCtx.canvas.height = screen.width;
+  canvasCtx.canvas.width = screen.height;
 } else { 
   canvasCtx.canvas.width = window.innerWidth;
   canvasCtx.canvas.height = window.innerHeight;
