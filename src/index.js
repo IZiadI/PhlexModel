@@ -131,7 +131,8 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      aspectRatio: {exact: w/h},
+      width: { ideal: w*4 },
+      height: { ideal: h*4 },
     }
   };
   adjustVideoSize(w,h);
