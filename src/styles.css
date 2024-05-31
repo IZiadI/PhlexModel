@@ -1,5 +1,5 @@
 body {
-  /* background-image: url("BG.jpg");
+  background-image: url("BG.jpg");
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
@@ -10,11 +10,7 @@ body {
   min-height: 100vh;
   margin: 0;
   
-  font-family: Arial, sans-serif; */
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
+  font-family: Arial, sans-serif;
 }
 .loader-wrapper{
   width: 100%;
@@ -56,6 +52,9 @@ h2 {
   margin-top: 0;
   margin-bottom: 1rem;
 }
+#output_canvas,#webcam{
+  transform: scale(-3,3);
+}
 
 #results {
   position: fixed;
@@ -69,26 +68,6 @@ h2 {
   flex-direction: column;
   justify-content: space-between;
 }
-#video_container
-{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-#webcam
-{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(-1,1);
-}
-#output_canvas
-{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(-1,1);
-}
 
 #counter, #pose-info, #countdown:not(:empty) , #timeSpent:not(:empty) {
   background-color: #c7fb36;
@@ -99,6 +78,9 @@ h2 {
   border: none;
   border-radius: 0.25rem;
   display: inline-block;
+}
+video, canvas {
+  max-width: 100%;
 }
 
 @keyframes loader{

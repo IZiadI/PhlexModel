@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Phlex</title>
+</head>
+
+<body>
+  <h1>Phlex</h1>
+  <div style="position: relative;" id="video_container">
+    <video id="webcam" style="width: 1280px; height: 720px; position: abso" autoplay playsinline></video>
+    <canvas class="output_canvas" id="output_canvas" width="1280" height="720" style="position: absolute; left: 0px; top: 0px;"></canvas>
+  </div>
+  <div id="results">
+    <div id="pose-info"></div>
+    <div id="counter"></div>
+    <div id="timer"><span id="countdown"></span></div>
+    <div id="timeSpent"></div>
+  </div>
+  <div class="loader-wrapper">
+    <span class="loader"><span class="loader-inner"></span></span>
+  </div>
+  <script src='src/dist/bundle.js'></script>
+
+</body>
+
+</html>
