@@ -50,12 +50,9 @@ var params = parseQueryString(queryString);
 console.log(params);
 
 let poseLandmarker;
-let runningMode = "IMAGE";
+let runningMode = "VIDEO";
 let webcamRunning = false;
 let lastVideoTime = -1;
-let modelLoaded = false;
-var zoomIGuessLol = 4;
-
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
 // get everything needed to run.
@@ -139,7 +136,7 @@ function enableCam(event) {
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     video.srcObject = stream;
-    video.addEventListener("loadeddata", predictWebcam);
+    video.addEventListener("loadeddata", startPrediction);
   });
 }
 //^ Firebase 
@@ -383,20 +380,6 @@ console.log("customizedAngles : " , customizedAngles );
 }
 
 async function predictWebcam() {
-  if (webcamRunning === true && !poseLandmarker) {
-    window.requestAnimationFrame(predictWebcam);
-    return;
-  }
-  else if (!modelLoaded)
-  {
-    modelLoaded = true;
-    $(".loader-wrapper").fadeOut("slow");
-  }
-  // Now let's start detecting the stream.
-  if (runningMode === "IMAGE") {
-    runningMode = "VIDEO";
-    await poseLandmarker.setOptions({ runningMode: "VIDEO" });
-  }
   let startTimeMs = performance.now();
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
@@ -665,3 +648,18 @@ if (params["dataPath"]) {
   getExercise(params["dataPath"]);
 }
 else { enableCam(); }
+
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+async function startPrediction() {
+  if (poseLandmarker)
+  {
+    $(".loader-wrapper").fadeOut("slow");
+    predictWebcam();
+  }
+  else
+  {
+    console.log("awaitingLandmarker");
+    startPrediction()
+  }
+}
