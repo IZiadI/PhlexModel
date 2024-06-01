@@ -570,11 +570,10 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   
-  console.log(result);
   canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
+  //canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
