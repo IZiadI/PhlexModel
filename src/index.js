@@ -659,7 +659,8 @@ async function startPrediction() {
   }
   else
   {
+    await delay(3000);
     console.log("awaitingLandmarker");
-    startPrediction()
+    startPrediction();
   }
 }
