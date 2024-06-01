@@ -569,18 +569,21 @@ function onResultsPose(results) {
 
 
 function drawAll(result) {
-  requestAnimationFrame(() => {
-    canvasCtx.clearRect(0, 0, out.width, out.height);
-    canvasCtx.drawImage(video, 0, 0, out.width, out.height);
   
-    for (const landmark of result.landmarks) {
-      drawingUtils.drawLandmarks(landmark, {
-        radius: (data) => DrawingUtils.lerp(data.from.z, -0.15, 0.1, 5, 1),
-        color: color
-      });
-      drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, { color: color });
-    }
-  });
+  // canvasCtx.save();
+  
+  canvasCtx.clearRect(0, 0, out.width, out.height);
+
+  canvasCtx.drawImage(video, 0, 0, out.width/2, out.height/2);
+
+  for (const landmark of result.landmarks) {
+    drawingUtils.drawLandmarks(landmark, {
+      radius: (data) => DrawingUtils.lerp(data.from.z, -0.15, 0.1, 5, 1),
+      color: color
+    });
+    drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, {color:color});
+  }
+  // canvasCtx.restore();
 }
 
 
