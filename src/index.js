@@ -570,10 +570,11 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   
-  canvasCtx.save();
-  canvasCtx.clearRect(0, 0, out.width, out.height);
+  // canvasCtx.save();
+  
+  // canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  //canvasCtx.drawImage(video, 0, 0, out.width, out.height);
+  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
@@ -582,7 +583,7 @@ function drawAll(result) {
     });
     drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, {color:color});
   }
-  canvasCtx.restore();
+  // canvasCtx.restore();
 }
 
 
