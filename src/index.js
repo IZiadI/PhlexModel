@@ -56,15 +56,18 @@ let lastVideoTime = -1;
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
 // get everything needed to run.
+let usedModel = 'src\\pose_landmarker_lite.task';
+if (params["useModel"])
+{
+  usedModel = 'src\\pose_landmarker_' + params['useModel'] + '.task';
+}
 const createPoseLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
   );
   poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
-      //modelAssetPath: 'Models\\pose_landmarker_heavy.task',
-      modelAssetPath: 'src\\pose_landmarker_full.task',
-      //modelAssetPath: 'Models\\pose_landmarker_lite.task',
+      modelAssetPath: usedModel,
       delegate: "GPU"
     },
     runningMode: runningMode,
@@ -572,9 +575,9 @@ function drawAll(result) {
   
   // canvasCtx.save();
   
-  canvasCtx.clearRect(0, 0, out.width, out.height);
+  // canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  canvasCtx.drawImage(video, 0, 0, out.width/2, out.height/2);
+  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
