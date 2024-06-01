@@ -77,8 +77,12 @@ const video = document.getElementById("webcam");
 const out = document.getElementById(
   "output_canvas"
 );
+const vid_out = document.getElementById(
+  "video_canvas"
+);
 
 var canvasCtx = out.getContext("2d");
+var vidCanvasCtx = vid_out.getContext("2d");
 var drawingUtils = new DrawingUtils(canvasCtx);
 
 function adjustVideoSize(width, height) {
@@ -87,6 +91,8 @@ function adjustVideoSize(width, height) {
   canvasCtx.canvas.height = height;
   out.style.width = width + "px";
   out.style.height = height + "px";
+  vid_out.style.width = width + "px";
+  vid_out.style.height = height + "px";
 
   // canvasCtx = out.getContext("2d");
   // drawingUtils = new DrawingUtils(canvasCtx);
@@ -572,9 +578,9 @@ function drawAll(result) {
   
   // canvasCtx.save();
   
-  // canvasCtx.clearRect(0, 0, out.width, out.height);
+  canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
+  vidCanvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
