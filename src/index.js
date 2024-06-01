@@ -570,6 +570,7 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   
+  console.log(result);
   canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
 
