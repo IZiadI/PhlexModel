@@ -112,10 +112,9 @@ if (hasGetUserMedia()) {
 }
 video.onloadedmetadata = () => {
   console.log("resizing");
-  video.width = video.videoWidth;
-  video.height = video.videoHeight;
-  video.style.width = video.videoWidth/2 + "px";
-  video.style.height = video.videoHeight/2 + "px";
+  let w = video.videoWidth;
+  let h = video.videoHeight;
+  video.style.aspectRatio = w / h;
 };
 // Enable the live webcam view and start detection.
 function enableCam(event) {

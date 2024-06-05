@@ -82,9 +82,10 @@ h2 {
 
 #webcam
 {
-  width: 30vw;
-  height: 30vh; 
+  height: 20vh;
   position: absolute;
+  top: 0;
+  left: 0;
   transform: scale(-1,1);
 }
 
