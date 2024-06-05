@@ -405,6 +405,10 @@ console.log("customizedAngles : " , customizedAngles );
 
 async function predictWebcam() {
   let startTimeMs = performance.now();
+  console.log("lastVideoTime: " + lastVideoTime);
+  console.log("video.currentTime: " + video.currentTime);
+  console.log("startTimeMs: " + startTimeMs);
+
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
@@ -589,8 +593,6 @@ function onResultsPose(results) {
 
 
 function drawAll(result) {
-  
-  console.log(result["landmarks"][0][0].x);
   canvasCtx.fillStyle = "#5a5959";
   //canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
