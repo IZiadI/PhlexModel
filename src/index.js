@@ -80,6 +80,23 @@ const video = document.getElementById("webcam");
 const out = document.getElementById(
   "output_canvas"
 );
+function releaseCanvas(canvas) {
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  ctx && ctx.clearRect(0, 0, 1, 1);
+}
+for (let i = 0; i < 8; i++) {
+  console.log("clearing canvas space");
+  const canvas = document.createElement('canvas');
+  canvas.width = 4096;
+  canvas.height = 4096;
+  const ctx = canvas.getContext('2d');
+  ctx && ctx.fillRect(0, 0, 100, 100);
+
+  // Force release each canvas
+  releaseCanvas(canvas);
+}
 
 var canvasCtx = out.getContext("2d");
 var drawingUtils = new DrawingUtils(canvasCtx);
@@ -394,11 +411,6 @@ async function predictWebcam() {
       onResultsPose(result);
     });
   }
-
-  // Call this function again to keep predicting when the browser is ready.
-  if (webcamRunning === true) {
-    window.requestAnimationFrame(predictWebcam);
-  }
 }
 
 function restartPoseDetection() {
@@ -559,6 +571,7 @@ function onResultsPose(results) {
       displayBreakTime(); 
     } else {
       stopPoseDetection();
+      console.log("stopping detection");
       canvasCtx.clearRect(0, 0, out.width, out.height);
       canvasCtx.fillStyle = "#5a5959";
       canvasCtx.font = "bold 35px serif";
@@ -577,11 +590,12 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   
-  canvasCtx.save();
-  out.style.display = "block";
+  console.log(result["landmarks"][0][0].x);
+  canvasCtx.fillStyle = "#5a5959";
+  //canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  //canvasCtx.drawImage(video, 0, 0, out.width/3, out.height/3);
+  //canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
@@ -590,7 +604,7 @@ function drawAll(result) {
     });
     drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, {color:color});
   }
-  canvasCtx.restore();
+  //canvasCtx.restore();
 }
 
 
@@ -626,6 +640,7 @@ function callTimer() {
 
 
 function displayBreakTime() {
+  console.log("displaying break");
   canvasCtx.clearRect(0, 0, out.width, out.height); // Clear the canvas first
   canvasCtx.fillStyle = "#5a5959";
   canvasCtx.font = "bold 35px serif";
@@ -661,7 +676,14 @@ async function startPrediction() {
   if (poseLandmarker)
   {
     $(".loader-wrapper").fadeOut("slow");
-    predictWebcam();
+    while (true)
+    {
+      try { predictWebcam(); }
+      catch {
+        console.log("some error");
+      }
+      await delay(10);
+    }
   }
   else
   {
