@@ -70,6 +70,24 @@ h2 {
   justify-content: space-between;
 }
 
+#video_container
+{
+  display: flex;
+  justify-content: left;
+  align-items: left;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#webcam
+{
+  width: 30vw;
+  height: 30vh; 
+  position: absolute;
+  transform: scale(-1,1);
+}
+
 #output_canvas
 {
   width: 100%;

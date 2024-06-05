@@ -110,7 +110,13 @@ if (hasGetUserMedia()) {
 } else {
   console.warn("getUserMedia() is not supported by your browser");
 }
-
+video.onloadedmetadata = () => {
+  console.log("resizing");
+  video.width = video.videoWidth;
+  video.height = video.videoHeight;
+  video.style.width = video.videoWidth/2 + "px";
+  video.style.height = video.videoHeight/2 + "px";
+};
 // Enable the live webcam view and start detection.
 function enableCam(event) {
   console.log("enabling camera");
@@ -182,7 +188,6 @@ window.downloadFile = (path) => {
 let countdownElement = document.getElementById("countdown");
 let counterElement = document.getElementById("counter");
 let poseInfoElement = document.getElementById("pose-info");
-let timeSpentInfoElement = document.getElementById("timeSpent");
 
 //* Exercise info to be collected
 let target_angles_list = [];
@@ -573,11 +578,11 @@ function onResultsPose(results) {
 
 function drawAll(result) {
   
-  // canvasCtx.save();
-  
-  // canvasCtx.clearRect(0, 0, out.width, out.height);
+  canvasCtx.save();
+  out.style.display = "block";
+  canvasCtx.clearRect(0, 0, out.width, out.height);
 
-  canvasCtx.drawImage(video, 0, 0, out.width, out.height);
+  //canvasCtx.drawImage(video, 0, 0, out.width/3, out.height/3);
 
   for (const landmark of result.landmarks) {
     drawingUtils.drawLandmarks(landmark, {
@@ -586,7 +591,7 @@ function drawAll(result) {
     });
     drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, {color:color});
   }
-  // canvasCtx.restore();
+  canvasCtx.restore();
 }
 
 
@@ -607,9 +612,7 @@ function callTimer() {
         inPose = false;
       }
       firstTimePose = true;
-      timeSpentInfoElement.textContent = `Total Time for P${
-        Num_Of_Pose_Completed + 1
-      } = ${poseTimeSpent[Num_Of_Pose_Completed + 1].toFixed(2)} S`;
+
       if (Num_Of_Pose_Completed + 1 == pose_angles_list.length) {
         Counter += 1;
         Num_Of_Pose_Completed = 0;
