@@ -404,7 +404,7 @@ console.log("customizedAngles : " , customizedAngles );
 }
 
 async function predictWebcam() {
-  let startTimeMs = performance.now();
+  let startTimeMs = (lastVideoTime+100) * 1000;
   console.log("lastVideoTime: " + lastVideoTime);
   console.log("video.currentTime: " + video.currentTime);
   console.log("startTimeMs: " + startTimeMs);
