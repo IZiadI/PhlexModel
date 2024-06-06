@@ -12,7 +12,6 @@ import {
 import $ from "jquery";
 
 
-
 function parseQueryString(queryString) {
   var params = {};
   var queryStringWithoutQuestionMark = queryString.substring(1); // Remove the leading '?'
@@ -53,6 +52,7 @@ let poseLandmarker;
 let runningMode = "VIDEO";
 let webcamRunning = false;
 let lastVideoTime = -1;
+var loaded = false;
 // Before we can use PoseLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
 // get everything needed to run.
@@ -80,26 +80,13 @@ const video = document.getElementById("webcam");
 const out = document.getElementById(
   "output_canvas"
 );
-function releaseCanvas(canvas) {
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d');
-  ctx && ctx.clearRect(0, 0, 1, 1);
-}
-for (let i = 0; i < 8; i++) {
-  console.log("clearing canvas space");
-  const canvas = document.createElement('canvas');
-  canvas.width = 4096;
-  canvas.height = 4096;
-  const ctx = canvas.getContext('2d');
-  ctx && ctx.fillRect(0, 0, 100, 100);
-
-  // Force release each canvas
-  releaseCanvas(canvas);
-}
 
 var canvasCtx = out.getContext("2d");
 var drawingUtils = new DrawingUtils(canvasCtx);
+
+const w = document.documentElement.clientWidth;
+const h = document.documentElement.clientHeight;
+adjustVideoSize(w, h);
 
 function adjustVideoSize(width, height) {
 
@@ -136,19 +123,11 @@ video.onloadedmetadata = () => {
 // Enable the live webcam view and start detection.
 function enableCam(event) {
   console.log("enabling camera");
-  if (!poseLandmarker) {
-    console.log("Wait! poseLandmaker not loaded yet.");
-  }
-
   if (webcamRunning === true) {
     webcamRunning = false;
   } else {
     webcamRunning = true;
   }
-
-  const w = document.documentElement.clientWidth;
-  const h = document.documentElement.clientHeight;
-
   // getUsermedia parameters.
   const constraints = {
     video: {
@@ -157,7 +136,6 @@ function enableCam(event) {
       height: { ideal: h*4 },
     }
   };
-  adjustVideoSize(w,h);
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     video.srcObject = stream;
@@ -404,16 +382,19 @@ console.log("customizedAngles : " , customizedAngles );
 }
 
 async function predictWebcam() {
-  let startTimeMs = (lastVideoTime+100) * 1000;
-  console.log("lastVideoTime: " + lastVideoTime);
-  console.log("video.currentTime: " + video.currentTime);
-  console.log("startTimeMs: " + startTimeMs);
-
+  let startTimeMs = performance.now();
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
-    poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
-      onResultsPose(result);
-    });
+    poseLandmarker.detectForVideo(video, startTimeMs, onResultsPose);
+    if (!loaded) {
+      $(".loader-wrapper").fadeOut("slow");
+      loaded = true;
+    }
+  }
+
+  // Call this function again to keep predicting when the browser is ready.
+  if (webcamRunning === true) {
+    window.requestAnimationFrame(predictWebcam);
   }
 }
 
@@ -593,7 +574,9 @@ function onResultsPose(results) {
 
 
 function drawAll(result) {
-  canvasCtx.fillStyle = "#5a5959";
+  
+  //console.log(result["landmarks"][0][0].x);
+  //canvasCtx.fillStyle = "#5a5959";
   //canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
 
@@ -667,25 +650,22 @@ function displayBreakTime() {
 }
 
 
-if (params["dataPath"]) {
-  getExercise(params["dataPath"]);
+
+window.onload = function () {
+  console.log("everythingloaded");
+  if (params["dataPath"]) {
+    getExercise(params["dataPath"]);
+  }
+  else { enableCam(); }
 }
-else { enableCam(); }
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function startPrediction() {
-  if (poseLandmarker)
+  if (poseLandmarker && document.readyState === "complete")
   {
-    $(".loader-wrapper").fadeOut("slow");
-    while (true)
-    {
-      try { predictWebcam(); }
-      catch {
-        console.log("some error");
-      }
-      await delay(10);
-    }
+    console.log("ready");
+    predictWebcam();
   }
   else
   {

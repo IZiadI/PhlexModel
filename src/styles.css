@@ -27,6 +27,14 @@ body {
   justify-content: center;
   align-items: center;
 }
+#webcamButton{
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .loader{
   display: inline-block;
   width: 30px;
