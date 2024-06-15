@@ -1,5 +1,6 @@
 body {
-  /* background-image: url("BG.jpg");
+  /* background-image: url("BG.jpg"); */
+  background-color: #242f3f;
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
@@ -10,11 +11,7 @@ body {
   min-height: 100vh;
   margin: 0;
   
-  font-family: Arial, sans-serif; */
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
+  font-family: Arial, sans-serif;
 }
 .loader-wrapper{
   width: 100%;
@@ -23,14 +20,6 @@ body {
   top: 0;
   left: 0;
   background-color: #242f3f;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-#webcamButton{
-  position: absolute;
-  top: 0;
-  left: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -65,28 +54,35 @@ h2 {
   margin-bottom: 1rem;
 }
 
-#results {
-  position: fixed;
-  right: 0;
-  top:1;
-  width: fit-content;
-  height: 70%;
+#results > div {
   padding: 1rem;
+  height: auto; /* Auto height */
+  width: auto; /* Auto width */
   box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  background-color: #009178; /* Same background color */
+  color: #000;
+  font-size: 1.5rem;
+  font-weight: bold; /* Use font-weight for bold text */
+  border: 2px solid #009178; /* Improved border */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add shadow */
+  margin: 0.5rem; /* Add margin for spacing */
+  text-align: center; /* Center align text */
+  overflow: auto; /* Hide overflow text */
+  word-wrap: break-word; /* Wrap long words */
 }
 
-#video_container
-{
-  display: flex;
-  justify-content: left;
-  align-items: left;
+#results {
   position: absolute;
-  top: 0;
-  left: 0;
+  bottom: 0;
+  display: flex;           /* Enable flexbox layout */
+  flex-direction: row;     /* Align items in a row */
+  flex-wrap: wrap;   
 }
+
 
 #webcam
 {
@@ -95,25 +91,29 @@ h2 {
   top: 0;
   left: 0;
   transform: scale(-1,1);
+  
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #009178; /* Same background color */
+  color: #000;
+  font-size: 1.5rem;
+  font-weight: bold; /* Use font-weight for bold text */
+  border: 2px solid #009178; /* Improved border */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add shadow */
+  margin: 0.5rem; /* Add margin for spacing */
+  text-align: center; /* Center align text */
+  overflow: auto; /* Hide overflow text */
+  word-wrap: break-word; /* Wrap long words */
 }
 
 #output_canvas
 {
-  width: 100%;
-  height: 100%;
+  position: absolute;
   object-fit: cover;
   transform: scale(-1,1);
-}
-
-#counter, #pose-info, #countdown:not(:empty) , #timeSpent:not(:empty) {
-  background-color: #c7fb36;
-  color: #000;
-  font-size: 1.5rem;
-  font-style: bold;
-  padding: 0.5rem 0.5rem;
-  border: none;
-  border-radius: 0.25rem;
-  display: inline-block;
 }
 
 @keyframes loader{

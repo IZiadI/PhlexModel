@@ -9,7 +9,7 @@ import {
   FilesetResolver,
   DrawingUtils
 } from "@mediapipe/tasks-vision";
-import $ from "jquery";
+import $, { data } from "jquery";
 
 
 function parseQueryString(queryString) {
@@ -77,19 +77,15 @@ const createPoseLandmarker = async () => {
 createPoseLandmarker();
 
 const video = document.getElementById("webcam");
-const out = document.getElementById(
-  "output_canvas"
-);
+const out = document.getElementById("output_canvas");
 
 var canvasCtx = out.getContext("2d");
 var drawingUtils = new DrawingUtils(canvasCtx);
 
 const w = document.documentElement.clientWidth;
 const h = document.documentElement.clientHeight;
-adjustVideoSize(w, h);
 
-function adjustVideoSize(width, height) {
-
+function adjsutCanvasSize(width, height) {
   canvasCtx.canvas.width = width;
   canvasCtx.canvas.height = height;
   out.style.width = width + "px";
@@ -99,10 +95,6 @@ function adjustVideoSize(width, height) {
   // drawingUtils = new DrawingUtils(canvasCtx);
   console.log("Resolution: " + width + "," + height)
 }
-
-// window.addEventListener('resize', adjustVideoSize);
-// window.addEventListener('orientationchange', adjustVideoSize);
-
 
 // Check if webcam access is supported.
 const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
@@ -132,13 +124,37 @@ function enableCam(event) {
   const constraints = {
     video: {
       facingMode: 'user',
-      width: { ideal: w*4 },
-      height: { ideal: h*4 },
     }
   };
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      // The actual width and height of the video
+      const actualWidth = video.videoWidth;
+      const actualHeight = video.videoHeight;
+
+      console.log(`Actual video width: ${actualWidth}`);
+      console.log(`Actual video height: ${actualHeight}`);
+
+      let newW;
+      let newH;
+
+      if (h < w)
+      {
+        newW = h * actualWidth / actualHeight;
+        newH = h;
+      }
+      else
+      {
+        newH = w * actualHeight / actualWidth;
+        newW = w;
+      }
+      
+      adjsutCanvasSize(newW, newH);
+
+      // You can now do something with the actual dimensions
+  };
     video.addEventListener("loadeddata", startPrediction);
   });
 }
@@ -161,7 +177,7 @@ const firestore = getFirestore(app);
 
 window.downloadFile = (path) => {
   return new Promise((resolve, reject) => {
-    getDownloadURL(ref(storage, "Exercises/" + path))
+    getDownloadURL(ref(storage, path))
       .then((url) => {
         var xhr = new XMLHttpRequest();
         xhr.responseType = "text";
@@ -195,7 +211,7 @@ let poseTiming = {
   6: 1,
 };
 let counterMax = 2;
-let flag = "RWL"; 
+let flag = "L"; 
 
 //^ info modification & customization
 let fixedAngles = [];
@@ -207,8 +223,8 @@ let customizedAngles = [];
 const Main_Angles = {
   L_Neck: [0, 12, 11, 0],
   R_Neck: [0, 11, 12, 1],
-  L_Shoulder: [13, 11, 23, 2],
-  R_Shoulder: [14, 12, 24, 3],
+  L_Shoulder: [23, 11, 13, 2],
+  R_Shoulder: [24, 12, 14, 3],
   L_Elbow: [11, 13, 15, 4],
   R_Elbow: [12, 14, 16, 5],
   L_Wrist: [13, 15, 19, 6],
@@ -255,10 +271,20 @@ function decompressFromBase64(compressedStr) {
   return decompressedBuffer.toString("utf8");
 }
 
-function getExercise(exercisePath) {
-  window
-    .downloadFile(exercisePath)
-    .then((txt) => {
+async function getExercise(firestoreDocPath) {
+  const docRef = doc(firestore, firestoreDocPath);
+  const fSData = await getDoc(docRef);
+  const dataObj = fSData.data();
+  const exercisePath = dataObj["mediapipeData"];
+  const timings = dataObj["timings"];
+  counterMax = dataObj["reps"];
+  flag = dataObj["sideFlag"];
+  poseTiming = {};
+  for (let index = 0; index < timings.length; index++) {
+    poseTiming[index + 1] = timings[index];
+  }
+  console.log(poseTiming);
+  window.downloadFile(exercisePath).then((txt) => {
       console.log(txt);
       const decompressedString = decompressFromBase64(txt);
       const jsonObject = JSON.parse(decompressedString);
@@ -298,16 +324,16 @@ function getExercise(exercisePath) {
     });
   }
   
-  function customizeAngles() {
+function customizeAngles() {
+  
+  if (flag === "R" || flag === "RTL") {
     
-    if (flag === "R" || flag === "RTL") {
-      
-      if (dynamicAngles.length === 0) {
-        for(let i = 0; i < fixedAngles.length ; i+=2){
-          customizedAngles.push(fixedAngles[i].replace(/^L/, "R"))
-        }
+    if (dynamicAngles.length === 0) {
+      for(let i = 0; i < fixedAngles.length ; i+=2){
+        customizedAngles.push(fixedAngles[i].replace(/^L/, "R"))
       }
-      else{
+    }
+    else{
       customizedAngles.push(...fixedAngles);
       customizedAngles.push(
         ...dynamicAngles.map((angle) => angle.replace(/^L/, "R"))
@@ -319,7 +345,7 @@ function getExercise(exercisePath) {
             let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
             let mainAnglesK = Main_Angles[rightAngle];
             pose_angles_list[poseNum][mainAnglesK[3]] =
-            pose_angles_list[poseNum][mainAnglesK[3] - 1];
+            pose_angles_list[poseNum][mainAnglesK[3] - 1] * -1;
           } 
         }
       }
@@ -343,11 +369,11 @@ function getExercise(exercisePath) {
           let lefttAngle = dynamicAngles[DA].replace(/^R/, "L");
           let mainAnglesK = Main_Angles[lefttAngle];
           pose_angles_list[poseNum][mainAnglesK[3]] =
-          pose_angles_list[poseNum][mainAnglesK[3] + 1];
+          pose_angles_list[poseNum][mainAnglesK[3] + 1] * -1;
         } 
       }
     }}
-  } 
+  }
   else if (flag === "RWL") {
     if (dynamicAngles.length === 0) {
       customizedAngles.push(...fixedAngles);
@@ -360,12 +386,12 @@ function getExercise(exercisePath) {
           let rightAngle = dynamicAngles[DA].replace(/^L/, "R");
           let mainAnglesK = Main_Angles[rightAngle];
           pose_angles_list[poseNum][mainAnglesK[3]] =
-            pose_angles_list[poseNum][mainAnglesK[3] - 1];
+            pose_angles_list[poseNum][mainAnglesK[3] - 1] * -1;
         } else {
           let lefttAngle = dynamicAngles[DA].replace(/^R/, "L");
           let mainAnglesK = Main_Angles[lefttAngle];
           pose_angles_list[poseNum][mainAnglesK[3]] =
-            pose_angles_list[poseNum][mainAnglesK[3] + 1];
+            pose_angles_list[poseNum][mainAnglesK[3] + 1] * -1;
         }
       }
     }
@@ -400,7 +426,11 @@ async function predictWebcam() {
 
 function restartPoseDetection() {
   const constraints = {
-    video: true
+    video: {
+      facingMode: 'user',
+      width: { ideal: w*4 },
+      height: { ideal: h*4 },
+    }
   };
   // Activate the webcam stream.
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
@@ -420,16 +450,32 @@ function stopPoseDetection() {
   webcamRunning = false;
 }
 
-function calculateAngle(point1, point2, point3) {
-  const radians =
-  Math.atan2(point3[1] - point2[1], point3[0] - point2[0]) -
-  Math.atan2(point1[1] - point2[1], point1[0] - point2[0]);
-  let angle = Math.round(Math.abs((radians * 180.0) / Math.PI));
-  
-  if (angle > 180.0) {
-    angle = 360 - angle;
+function calculateClockwiseAngle(A, B, C) {
+  // Compute vectors BA and BC
+  let BAx = A[0] - B[0];
+  let BAy = A[1] - B[1];
+  let BCx = C[0] - B[0];
+  let BCy = C[1] - B[1];
+
+  // Compute dot product and magnitudes of BA and BC
+  let dotProduct = BAx * BCx + BAy * BCy;
+  let magnitudeBA = Math.sqrt(BAx * BAx + BAy * BAy);
+  let magnitudeBC = Math.sqrt(BCx * BCx + BCy * BCy);
+
+  // Compute the angle using dot product
+  let angle = Math.acos(dotProduct / (magnitudeBA * magnitudeBC));
+
+  // Compute cross product to determine the sign of the angle
+  let crossProduct = BAx * BCy - BAy * BCx;
+
+  // If the cross product is negative, the angle is clockwise (negative)
+  if (crossProduct < 0) {
+      angle = -angle;
   }
-  
+
+  // Convert the angle from radians to degrees
+  angle = angle * (180 / Math.PI);
+
   return angle;
 }
 
@@ -450,7 +496,7 @@ function toBeCompared() {
       midP = [neckX, neckY] ;
     }    
 
-    let rt_angle = calculateAngle(
+    let rt_angle = calculateClockwiseAngle(
       [L_Marks[Val[0]].x, L_Marks[Val[0]].y],
       midP ,
       [L_Marks[Val[2]].x, L_Marks[Val[2]].y]
@@ -500,13 +546,16 @@ function onResultsPose(results) {
   document.body.classList.add("loaded");
 
   
-  L_Marks = results.landmarks[0];
+  L_Marks = results["landmarks"][0];
+  let Match = false;
+  if (L_Marks) {
+    [RT_Angles, Correct_Angles] = toBeCompared();
+    Match = comparePoses(RT_Angles, Correct_Angles);
+    // console.log("Correct Angles ", Correct_Angles);
+    // console.log("RT Angles ", RT_Angles);
+  }
+
   
-  [RT_Angles, Correct_Angles] = toBeCompared();
-  //console.log("Correct Angles ", Correct_Angles);
-  //console.log("RT Angles ", RT_Angles);
-  
-  let Match = comparePoses(RT_Angles, Correct_Angles);
   
   if (Match == true) {
     color = "#2AAA8A";
@@ -524,7 +573,7 @@ function onResultsPose(results) {
       Num_Of_Pose_Completed--;
     }
   }
-  drawAll(results);
+  drawAll(results,Correct_Angles);
   color = "#E37383";
   // When leaving the pose
   if (!Match && inPose) {
@@ -545,7 +594,7 @@ function onResultsPose(results) {
     Num_Of_Pose_Completed + 1
   })`;
 
-  counterElement.textContent = `${Counter} Times Elapsed.`;
+  counterElement.textContent = `${Counter} reps done.`;
   if (Counter >= counterMax) {
     if (flag == "RTL") {
       flag = "L";
@@ -568,17 +617,89 @@ function onResultsPose(results) {
       const x = canvasWidth / 2 - textWidth / 2;
       const y = canvasHeight / 2;
       canvasCtx.fillText("Done Exercising , Good job !", x, y);
+      out.style.transform = "scale(1,1)";
     }
   }
 }
 
 
-function drawAll(result) {
+function rotateAndScalePoint(A, B, X, newMagnitude) {
+  // Convert angle X from degrees to radians
+  let radians = X * (Math.PI / 180);
+
+  // Translate point B to the origin with respect to A
+  let translatedBx = B.x - A.x;
+  let translatedBy = B.y - A.y;
+
+  // Perform the rotation using the rotation matrix
+  let rotatedBx = translatedBx * Math.cos(radians) - translatedBy * Math.sin(radians);
+  let rotatedBy = translatedBx * Math.sin(radians) + translatedBy * Math.cos(radians);
+
+  // Calculate the current magnitude of the rotated vector
+  let currentMagnitude = Math.sqrt(rotatedBx * rotatedBx + rotatedBy * rotatedBy);
+
+  // Scale the rotated vector to the new magnitude
+  let scale = newMagnitude / currentMagnitude;
+  let scaledBx = rotatedBx * scale;
+  let scaledBy = rotatedBy * scale;
+
+  // Translate the point back
+  let newBx = scaledBx + A.x;
+  let newBy = scaledBy + A.y;
+
+  return {x: newBx, y: newBy};
+}
+
+function findVectorPoint2D(a, b, magnitude) {
+  // Compute the vector ab
+  let ab = {
+      x: a.x - b.x,
+      y: a.y - b.y
+  };
+
+  // Compute the magnitude of vector ab
+  let abMagnitude = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
+
+  // Normalize the vector ab to get a unit vector
+  let unitVector = {
+      x: ab.x / abMagnitude,
+      y: ab.y / abMagnitude
+  };
+
+  // Scale the unit vector by the desired magnitude
+  let scaledVector = {
+      x: unitVector.x * magnitude,
+      y: unitVector.y * magnitude
+  };
+
+  // Compute the point c by adding the scaled vector to point b
+  let c = {
+      x: b.x + scaledVector.x,
+      y: b.y + scaledVector.y
+  };
+
+  return c;
+}
+
+function drawLine(ctx, x1, y1, x2, y2, lineWidth) {
+  ctx.beginPath();      // Begin a new path
+
+  ctx.moveTo(x1 , y1);   // Move the drawing cursor to the start point (x1, y1)
+  ctx.lineTo(x2 , y2);   // Draw a line to the end point (x2, y2)
+  ctx.strokeStyle = 'white'; // Set the stroke color
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();         // Render the line
+}
+
+function drawAll(result,correctAngles) {
   
-  //console.log(result["landmarks"][0][0].x);
   //canvasCtx.fillStyle = "#5a5959";
   //canvasCtx.save();
   canvasCtx.clearRect(0, 0, out.width, out.height);
+  
+  if (!result.landmarks[0])
+    return;
+  
 
   //canvasCtx.drawImage(video, 0, 0, out.width, out.height);
 
@@ -589,6 +710,25 @@ function drawAll(result) {
     });
     drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS, {color:color});
   }
+
+  const cnvWidth = canvasCtx.canvas.width;
+  const cnvHeight = canvasCtx.canvas.height;
+  var i = 0;
+  customizedAngles.forEach(angle => {
+    const angleLandmarks = Main_Angles[angle];
+    const x1 = result["landmarks"][0][angleLandmarks[0]].x * cnvWidth;
+    const y1 = result["landmarks"][0][angleLandmarks[0]].y * cnvHeight;
+    const x2 = result["landmarks"][0][angleLandmarks[1]].x * cnvWidth;
+    const y2 = result["landmarks"][0][angleLandmarks[1]].y * cnvHeight;
+    const A = { x: x1, y: y1 };
+    const B = { x: x2, y: y2 };
+    const resizedA = findVectorPoint2D(A, B, 20);
+    const C = rotateAndScalePoint(B, resizedA, correctAngles[customizedAngles.indexOf(angle)], 20);
+    //console.log("correctAngle: " + correctAngles[customizedAngles.indexOf(angle)] + "\nDrawnAngle: " + calculateClockwiseAngle([x1, y1], [x2, y2], [x3, y3]));
+    drawLine(canvasCtx, resizedA.x, resizedA.y, B.x, B.y,10);
+    drawLine(canvasCtx, B.x, B.y, C.x, C.y,10);
+    i++;
+  });
   //canvasCtx.restore();
 }
 
