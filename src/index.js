@@ -551,8 +551,8 @@ function onResultsPose(results) {
   if (L_Marks) {
     [RT_Angles, Correct_Angles] = toBeCompared();
     Match = comparePoses(RT_Angles, Correct_Angles);
-    // console.log("Correct Angles ", Correct_Angles);
-    // console.log("RT Angles ", RT_Angles);
+    console.log("Correct Angles ", Correct_Angles);
+    console.log("RT Angles ", RT_Angles);
   }
 
   
