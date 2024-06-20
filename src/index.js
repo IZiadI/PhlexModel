@@ -273,7 +273,7 @@ function decompressFromBase64(compressedStr) {
 
 async function getExercise(firestoreDocPath) {
   const docRef = doc(firestore, firestoreDocPath);
-  const fSData = await getDoc(docRef);
+  var fSData = await getDoc(docRef);
   const dataObj = fSData.data();
   const exercisePath = dataObj["mediapipeData"];
   const timings = dataObj["timings"];
@@ -287,7 +287,8 @@ async function getExercise(firestoreDocPath) {
   window.downloadFile(exercisePath).then((txt) => {
       console.log(txt);
       const decompressedString = decompressFromBase64(txt);
-      const jsonObject = JSON.parse(decompressedString);
+      const cleanedString = decompressedString.replaceAll("NaN", "180");
+      const jsonObject = JSON.parse(cleanedString);
       jsonObject["poses"].forEach((lst) =>
         pose_angles_list.push(lst["mainAngles"])
       );
