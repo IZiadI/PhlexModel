@@ -253,7 +253,7 @@ let pose;
 let L_Marks;
 let RT_Angles = [];
 let Correct_Angles = [];
-let tolerance_deg = 30;
+let tolerance_deg = 20;
 let Num_Of_Pose_Completed = 0;
 
 let countdown = Number.MAX_SAFE_INTEGER;
@@ -326,7 +326,8 @@ async function getExercise(firestoreDocPath) {
         L_poseTimeSpent: SL_poseTimeSpent,
         R_poseTimeSpent: SR_poseTimeSpent,
         poseTimeSpent: S_poseTimeSpent,
-      }
+      },
+      isBegin: true,
     }
     updateDoc(docRef, analysisData);
   }
