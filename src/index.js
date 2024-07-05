@@ -295,7 +295,7 @@ async function getExercise(firestoreDocPath) {
   const exercisePath = dataObj["mediapipeData"];
   const timings = dataObj["timings"];
   sets = dataObj["sets"];
-  if (dataObj["isBegin"] === true) {
+  if (dataObj["isBegin"] === true && dataObj["isTestExercise"] != true) {
     console.log("analysis Data: " + dataObj["analysis"]);
     SR_poseTimeSpent = dataObj["analysis"]["R_poseTimeSpent"];
     SL_poseTimeSpent = dataObj["analysis"]["L_poseTimeSpent"];
